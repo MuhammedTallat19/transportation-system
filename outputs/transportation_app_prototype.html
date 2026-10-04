@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transportation App Prototype</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #12324f;
+      --muted: #5f7286;
+      --accent: #1f6feb;
+      --accent-2: #16a34a;
+      --accent-3: #f59e0b;
+      --border: #dfe7f1;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--ink); }
+    .app-shell { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 30px rgba(18,50,79,0.06); }
+    .brand { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .tabs { display: flex; gap: 10px; }
+    .tab { border: 1px solid var(--border); background: #f7fbff; color: var(--ink); padding: 8px 14px; border-radius: 999px; cursor: pointer; font-weight: 600; }
+    .tab.active { background: var(--accent); color: white; }
+    .panel { display: none; margin-top: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; box-shadow: 0 8px 30px rgba(18,50,79,0.06); }
+    .panel.active { display: block; }
+    .grid { display: grid; gap: 16px; }
+    .grid.two { grid-template-columns: 1.1fr 0.9fr; }
+    .card { background: #f9fbff; border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+    .pill { display: inline-block; background: #e8f2ff; color: var(--accent); padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+    .hero { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; }
+    .btn { background: var(--accent); color: white; border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 700; }
+    .btn.secondary { background: var(--accent-2); }
+    .btn.ghost { background: white; color: var(--accent); border: 1px solid var(--border); }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    select, input, textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; }
+    .map { position: relative; height: 260px; border-radius: 16px; background: linear-gradient(135deg, #dff6ff, #eef8ff); overflow: hidden; border: 1px solid var(--border); }
+    .route-line { position: absolute; inset: 0; }
+    .station { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 6px rgba(31,111,235,0.15); }
+    .vehicle { position: absolute; width: 24px; height: 24px; background: var(--accent-3); border-radius: 8px; transform: translate(-50%, -50%); transition: all 0.6s ease-in-out; }
+    .vehicle::after { content: ""; position: absolute; inset: 4px; border-radius: 6px; background: white; }
+    .status { padding: 8px 10px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+    .status.live { background: #dcfce7; color: #166534; }
+    .status.warning { background: #fef3c7; color: #92400e; }
+    .timeline { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .step { background: #f7fbff; border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    th { background: #f7fbff; }
+    .rating { display: flex; gap: 8px; margin-top: 8px; }
+    .star { font-size: 28px; color: #cbd5e1; cursor: pointer; }
+    .star.active { color: var(--accent-3); }
+    .gps-pulse { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ef4444; animation: pulse 1.2s infinite; margin-right: 6px; }
+    @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7;} 70% { transform: scale(1.2); opacity: 1;} 100% { transform: scale(0.9); opacity: 0.7;} }
+    .demo-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    @media (max-width: 900px) { .hero, .grid.two { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) {
+      .app-shell { padding: 16px; }
+      .topbar { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .tabs { width: 100%; flex-wrap: wrap; }
+      .tab { flex: 1 1 auto; }
+      select, input, textarea { max-width: 100%; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="topbar">
+      <div>
+        <div class="brand">Transportation App</div>
+        <div style="color: var(--muted); font-size: 13px;">Passenger • Driver • Admin demo</div>
+      </div>
+      <nav class="tabs" aria-label="Demo views">
+        <button type="button" class="tab active" data-view="passenger" aria-controls="passenger" aria-pressed="true">Passenger App</button>
+        <button type="button" class="tab" data-view="driver" aria-controls="driver" aria-pressed="false">Driver App</button>
+        <button type="button" class="tab" data-view="admin" aria-controls="admin" aria-pressed="false">Admin Dashboard</button>
+      </nav>
+    </div>
+
+    <div id="passenger" class="panel active">
+      <div class="hero">
+        <div class="card">
+          <div class="pill">Passenger journey</div>
+          <h2>Search your trip</h2>
+          <p>In production, station and route lists are loaded dynamically from the database. This demo uses sample data only.</p>
+          <div class="field">
+            <label for="startStation">Start Station</label>
+            <select id="startStation">
+              <option value="">Choose start station</option>
+              <option value="A">Al-Mansoura Center</option>
+              <option value="B">Al-Safaa Square</option>
+              <option value="C">North Terminal</option>
+              <option value="D">University Gate</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="destStation">Destination Station</label>
+            <select id="destStation">
+              <option value="">Choose destination station</option>
+              <option value="A">Al-Mansoura Center</option>
+              <option value="B">Al-Safaa Square</option>
+              <option value="C">North Terminal</option>
+              <option value="D">University Gate</option>
+            </select>
+          </div>
+          <button class="btn" id="searchBtn">Search Route</button>
+          <div class="demo-note">Demo note: no station is hardcoded in the production app; the list is fetched from the API at runtime.</div>
+        </div>
+        <div class="card" id="resultsCard" role="status" aria-live="polite">
+          <div class="pill">Result</div>
+          <h3>Choose stations to see the fare and ETA</h3>
+          <p>Transportation App resolves the matching route and shows the fare instantly.</p>
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:16px;">
+        <div class="card">
+          <h3>Live route preview</h3>
+          <div class="map" id="mapPreview">
+            <svg class="route-line" viewBox="0 0 500 250" preserveAspectRatio="none">
+              <path d="M60 170 C140 90, 220 90, 260 140 S380 220, 440 80" stroke="#1f6feb" stroke-width="4" fill="none" stroke-linecap="round" />
+            </svg>
+            <div class="station" style="left:10%;top:72%"></div>
+            <div class="station" style="left:43%;top:50%"></div>
+            <div class="station" style="left:68%;top:35%"></div>
+            <div class="station" style="left:87%;top:60%"></div>
+            <div class="vehicle" id="vehicleMarker" style="left:15%;top:72%"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="pill">Live tracking</div>
+          <h3>Vehicle is approaching</h3>
+          <p class="status live">GPS broadcast active • 5-second cadence</p>
+          <div class="timeline">
+            <div class="step">Station selected</div>
+            <div class="step">Fare calculated</div>
+            <div class="step">Vehicle tracked live</div>
+            <div class="step">Trip complete + rating</div>
+          </div>
+          <button class="btn secondary" id="completeTripBtn" style="margin-top:12px;">Complete Trip</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="driver" class="panel">
+      <div class="hero">
+        <div class="card">
+          <div class="pill">Driver workflow</div>
+          <h2>Today’s assignment</h2>
+          <p>Driver sees the assigned route and vehicle, then taps Start Trip.</p>
+          <div class="card" style="margin-top:10px;">
+            <strong>Route 12 • North Terminal → University Gate</strong>
+            <p>Vehicle: ABC-123 • Status: Ready</p>
+            <button class="btn" id="startTripBtn">Start Trip</button>
+          </div>
+        </div>
+        <div class="card" id="driverStatusCard" role="status" aria-live="polite">
+          <div class="pill">Active trip</div>
+          <h3>Tap start to begin the trip flow</h3>
+          <p>Driver app shows a single-tap start/end experience with live GPS.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="admin" class="panel">
+      <div class="hero">
+        <div class="card" style="min-width: 220px;">
+          <div class="pill">Admin dashboard</div>
+          <h3>Manage the network</h3>
+          <ul>
+            <li>Stations</li>
+            <li>Routes</li>
+            <li>Fare Rules</li>
+            <li>Vehicles</li>
+            <li>Drivers</li>
+          </ul>
+          <button class="btn" id="addStationBtn">Add Station</button>
+        </div>
+        <div class="card">
+          <h3>Stations</h3>
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Governorate</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Al-Mansoura Center</td><td>North</td><td>Active</td></tr>
+              <tr><td>Al-Safaa Square</td><td>North</td><td>Active</td></tr>
+              <tr><td>University Gate</td><td>South</td><td>Active</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-pressed', 'false');
+      });
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      tab.setAttribute('aria-pressed', 'true');
+      document.getElementById(tab.dataset.view).classList.add('active');
+    }));
+
+    const stations = {
+      A: 'Al-Mansoura Center',
+      B: 'Al-Safaa Square',
+      C: 'North Terminal',
+      D: 'University Gate'
+    };
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const start = document.getElementById('startStation').value;
+      const dest = document.getElementById('destStation').value;
+      if (!start || !dest || start === dest) {
+        document.getElementById('resultsCard').innerHTML = '<div class="pill">Result</div><h3>Please choose two different stations</h3><p>The system reports no direct route when a valid connection does not exist.</p>';
+        return;
+      }
+      document.getElementById('resultsCard').innerHTML = `
+        <div class="pill">Result</div>
+        <h3>${stations[start]} → ${stations[dest]}</h3>
+        <p><strong>Fare:</strong> 15.00 EGP</p>
+        <p><strong>Estimated time:</strong> 18 min</p>
+        <p><strong>Vehicle:</strong> Next available on matched route</p>
+        <p class="status warning">Live tracking is available once the trip begins</p>
+      `;
+      document.getElementById('vehicleMarker').style.left = '45%';
+      document.getElementById('vehicleMarker').style.top = '35%';
+    });
+
+    document.getElementById('completeTripBtn').addEventListener('click', () => {
+      document.getElementById('resultsCard').innerHTML = `
+        <div class="pill">Trip complete</div>
+        <h3>How was your trip?</h3>
+        <div class="rating" aria-label="Rating: 3 out of 5">
+          <span class="star active" aria-hidden="true">★</span><span class="star active" aria-hidden="true">★</span><span class="star active" aria-hidden="true">★</span><span class="star" aria-hidden="true">★</span><span class="star" aria-hidden="true">★</span>
+        </div>
+        <p style="margin-top:10px;">Passengers can rate and review a driver after a completed trip.</p>
+      `;
+    });
+
+    document.getElementById('startTripBtn').addEventListener('click', () => {
+      document.getElementById('driverStatusCard').innerHTML = `
+        <div class="pill">Active trip</div>
+        <h3><span class="gps-pulse"></span>GPS broadcasting</h3>
+        <p>Elapsed time: 00:03:12</p>
+        <p class="status live">Driver can tap End Trip at any time</p>
+        <button class="btn secondary" id="endTripBtn">End Trip</button>
+      `;
+      document.getElementById('endTripBtn').addEventListener('click', () => {
+        document.getElementById('driverStatusCard').innerHTML = `
+          <div class="pill">Trip summary</div>
+          <h3>Trip completed</h3>
+          <p>Distance: 8.4 km</p>
+          <p>Average rating: 4.7</p>
+          <p class="status live">Trip stats are available in the driver app</p>
+        `;
+      });
+    });
+
+    document.getElementById('addStationBtn').addEventListener('click', () => {
+      document.getElementById('admin').querySelector('.hero').innerHTML = `
+        <div class="card" style="min-width: 220px;">
+          <div class="pill">Admin dashboard</div>
+          <h3>Add a station</h3>
+          <div class="field"><label>Station name</label><input value="New Pilot Station" /></div>
+          <div class="field"><label>Governorate</label><input value="North" /></div>
+          <div class="field"><label>Latitude</label><input value="30.123" /></div>
+          <div class="field"><label>Longitude</label><input value="31.456" /></div>
+          <button class="btn">Save station</button>
+          <p class="demo-note">The production dashboard lets administrators add or edit stations without any app release.</p>
+        </div>
+        <div class="card">
+          <h3>Stations</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Governorate</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Al-Mansoura Center</td><td>North</td><td>Active</td></tr>
+              <tr><td>Al-Safaa Square</td><td>North</td><td>Active</td></tr>
+              <tr><td>University Gate</td><td>South</td><td>Active</td></tr>
+              <tr><td>New Pilot Station</td><td>North</td><td>Draft</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>

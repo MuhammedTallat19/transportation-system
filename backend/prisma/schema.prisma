@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Governorate {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(120)
+  name_ar     String?  @db.VarChar(120)
+  country_code String  @db.Char(2)
+  is_active   Boolean  @default(true)
+  timezone    String   @db.VarChar(50)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now())
+  users       User[]
+  vehicles    Vehicle[]
+  stations    Station[]
+  routes      Route[]
+  settings    Setting[]
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(30)
+  description String?  @db.VarChar(255)
+  user_roles  UserRole[]
+}
+
+model User {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firebase_uid       String       @unique @db.VarChar(128)
+  full_name          String       @db.VarChar(150)
+  email              String?      @unique @db.VarChar(150)
+  phone_number       String?      @unique @db.VarChar(20)
+  profile_photo_url  String?
+  preferred_language String       @db.VarChar(5)
+  status             String       @db.VarChar(50)
+  governorate_id     String?      @db.Uuid
+  created_at         DateTime     @default(now())
+  updated_at         DateTime     @default(now())
+  governorate        Governorate? @relation(fields: [governorate_id], references: [id])
+  roles              UserRole[]
+  passenger          Passenger?
+  driver             Driver?
+  notifications      Notification[]
+  payments           Payment[]
+  reviews            Review[]
+  favorites          Favorite[]
+  audit_logs         AuditLog[]   @relation("actor_user")
+  trips              Trip[]
+}
+
+model UserRole {
+  user_id     String @db.Uuid
+  role_id     Int
+  assigned_at DateTime @default(now())
+  user        User @relation(fields: [user_id], references: [id])
+  role        Role @relation(fields: [role_id], references: [id])
+
+  @@id([user_id, role_id])
+}
+
+model Passenger {
+  user_id              String  @id @db.Uuid
+  home_station_id      String? @db.Uuid
+  loyalty_points       Int     @default(0)
+  total_trips          Int     @default(0)
+  average_rating_given Float?
+  created_at           DateTime @default(now())
+  user                 User    @relation(fields: [user_id], references: [id])
+  home_station         Station? @relation(fields: [home_station_id], references: [id])
+}
+
+model Driver {
+  user_id            String  @id @db.Uuid
+  license_number     String  @unique @db.VarChar(50)
+  license_expiry     DateTime
+  national_id        String  @unique @db.VarChar(30)
+  status             String  @db.VarChar(50)
+  assigned_vehicle_id String? @db.Uuid
+  average_rating     Float   @default(5.0)
+  total_trips        Int     @default(0)
+  hired_at           DateTime @default(now())
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now())
+  user               User    @relation(fields: [user_id], references: [id])
+  vehicle            Vehicle? @relation("driver_vehicle", fields: [assigned_vehicle_id], references: [id])
+  trips              Trip[]
+  reviews            Review[]
+  assigned_vehicles  Vehicle[] @relation("current_driver")
+}
+
+model Vehicle {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  governorate_id    String    @db.Uuid
+  plate_number      String    @db.VarChar(20)
+  vehicle_type      String    @db.VarChar(30)
+  capacity          Int
+  manufacture_year  Int?
+  status            String    @db.VarChar(50)
+  inspection_expiry DateTime?
+  current_driver_id String?   @db.Uuid
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now())
+  governorate       Governorate @relation(fields: [governorate_id], references: [id])
+  current_driver    Driver?   @relation("current_driver", fields: [current_driver_id], references: [user_id])
+  driver_assignments VehicleRouteAssignment[]
+  assigned_drivers  Driver[]  @relation("driver_vehicle")
+  trips             Trip[]
+}
+
+model Station {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  governorate_id  String  @db.Uuid
+  name            String  @db.VarChar(150)
+  name_ar         String? @db.VarChar(150)
+  latitude        Float
+  longitude       Float
+  address         String? @db.VarChar(255)
+  is_active       Boolean @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now())
+  governorate     Governorate @relation(fields: [governorate_id], references: [id])
+  home_passengers Passenger[]
+  route_station   RouteStation[]
+  favorites       Favorite[]
+  start_trips     Trip[] @relation("start_station")
+  dest_trips      Trip[] @relation("dest_station")
+}
+
+model Route {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  governorate_id String  @db.Uuid
+  name           String  @db.VarChar(150)
+  code           String  @db.VarChar(20)
+  is_active      Boolean @default(true)
+  total_distance_km Float?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now())
+  governorate    Governorate @relation(fields: [governorate_id], references: [id])
+  route_stations RouteStation[]
+  fare_rules     FareRule[]
+  trips          Trip[]
+  vehicle_route_assignments VehicleRouteAssignment[]
+}
+
+model RouteStation {
+  id                    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  route_id              String  @db.Uuid
+  station_id            String  @db.Uuid
+  station_order         Int
+  distance_from_start_km Float  @default(0)
+  route                 Route   @relation(fields: [route_id], references: [id])
+  station               Station @relation(fields: [station_id], references: [id])
+}
+
+model VehicleRouteAssignment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vehicle_id  String   @db.Uuid
+  route_id    String   @db.Uuid
+  assigned_from DateTime @default(now())
+  assigned_to DateTime?
+  is_current  Boolean  @default(true)
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id])
+  route       Route    @relation(fields: [route_id], references: [id])
+}
+
+model FareRule {
+  id                   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  route_id             String  @db.Uuid
+  fare_type            String  @db.VarChar(50)
+  base_fare_cents      Int     @default(0)
+  per_km_rate_cents    Int     @default(0)
+  per_station_rate_cents Int   @default(0)
+  min_fare_cents       Int     @default(0)
+  max_fare_cents       Int?
+  currency             String  @db.Char(3)
+  effective_from       DateTime @default(now())
+  effective_to         DateTime?
+  is_active            Boolean  @default(false)
+  drafted_by           String? @db.Uuid
+  approved_by          String? @db.Uuid
+  created_at           DateTime @default(now())
+  route                Route   @relation(fields: [route_id], references: [id])
+  trips                Trip[]
+  fares                Fare[]
+}
+
+model Trip {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passenger_id          String   @db.Uuid
+  driver_id             String?  @db.Uuid
+  vehicle_id            String?  @db.Uuid
+  route_id              String   @db.Uuid
+  start_station_id      String   @db.Uuid
+  dest_station_id       String   @db.Uuid
+  fare_rule_id          String   @db.Uuid
+  fare_amount_cents     Int
+  currency              String   @db.Char(3)
+  status                String   @db.VarChar(50)
+  requested_at          DateTime @default(now())
+  assigned_at           DateTime?
+  started_at            DateTime?
+  ended_at              DateTime?
+  estimated_duration_sec Int?
+  estimated_distance_km  Float?
+  cancellation_reason   String?  @db.VarChar(255)
+  passenger             User     @relation(fields: [passenger_id], references: [id])
+  driver                Driver?  @relation(fields: [driver_id], references: [user_id])
+  vehicle               Vehicle? @relation(fields: [vehicle_id], references: [id])
+  route                 Route    @relation(fields: [route_id], references: [id])
+  start_station         Station  @relation("start_station", fields: [start_station_id], references: [id])
+  dest_station          Station  @relation("dest_station", fields: [dest_station_id], references: [id])
+  fare_rule             FareRule @relation(fields: [fare_rule_id], references: [id])
+  trip_locations        TripLocation[]
+  trip_history          TripHistory?
+  fares                 Fare[]
+  ticket                Ticket?
+  payments              Payment[]
+  reviews               Review[]
+}
+
+model TripLocation {
+  id          Int      @id @default(autoincrement())
+  trip_id     String   @db.Uuid
+  latitude    Float
+  longitude   Float
+  speed_kmh   Float?
+  heading_deg Float?
+  recorded_at DateTime @default(now())
+  trip        Trip     @relation(fields: [trip_id], references: [id])
+}
+
+model TripHistory {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id              String   @unique @db.Uuid
+  passenger_id         String   @db.Uuid
+  driver_id            String?  @db.Uuid
+  route_name_snapshot  String   @db.VarChar(150)
+  start_station_snapshot String @db.VarChar(150)
+  dest_station_snapshot String @db.VarChar(150)
+  fare_amount_cents    Int
+  final_status         String   @db.VarChar(50)
+  distance_km          Float?
+  duration_sec         Int?
+  completed_at         DateTime @default(now())
+  trip                 Trip     @relation(fields: [trip_id], references: [id])
+}
+
+model Fare {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id             String?  @db.Uuid
+  fare_rule_id        String   @db.Uuid
+  base_component_cents Int    @default(0)
+  distance_component_cents Int @default(0)
+  station_component_cents  Int @default(0)
+  surcharge_cents      Int    @default(0)
+  total_cents         Int
+  currency            String  @db.Char(3)
+  quoted_at           DateTime @default(now())
+  trip                Trip?   @relation(fields: [trip_id], references: [id])
+  fare_rule           FareRule @relation(fields: [fare_rule_id], references: [id])
+}
+
+model Ticket {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id      String   @unique @db.Uuid
+  ticket_code  String   @unique @db.VarChar(20)
+  status       String   @db.VarChar(50)
+  issued_at    DateTime @default(now())
+  validated_at DateTime?
+  expires_at   DateTime?
+  trip         Trip     @relation(fields: [trip_id], references: [id])
+}
+
+model Payment {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id      String   @db.Uuid
+  payer_id     String   @db.Uuid
+  amount_cents Int
+  currency     String   @db.Char(3)
+  method       String   @db.VarChar(50)
+  status       String   @db.VarChar(50)
+  provider_ref String?  @db.VarChar(100)
+  paid_at      DateTime?
+  created_at   DateTime @default(now())
+  trip         Trip     @relation(fields: [trip_id], references: [id])
+  payer        User     @relation(fields: [payer_id], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id   String   @db.Uuid
+  title     String   @db.VarChar(150)
+  body      String
+  channel   String   @db.VarChar(50)
+  data      Json?
+  is_read   Boolean  @default(false)
+  sent_at   DateTime @default(now())
+  read_at   DateTime?
+  user      User     @relation(fields: [user_id], references: [id])
+}
+
+model Review {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id      String   @unique @db.Uuid
+  passenger_id String   @db.Uuid
+  driver_id    String?  @db.Uuid
+  rating       Int
+  comment      String?
+  created_at   DateTime @default(now())
+  trip         Trip     @relation(fields: [trip_id], references: [id])
+  passenger    User     @relation(fields: [passenger_id], references: [id])
+  driver       Driver?  @relation(fields: [driver_id], references: [user_id])
+}
+
+model Favorite {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  station_id String   @db.Uuid
+  label      String?  @db.VarChar(50)
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id])
+  station    Station  @relation(fields: [station_id], references: [id])
+
+  @@unique([user_id, station_id])
+}
+
+model Setting {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  governorate_id String? @db.Uuid
+  key          String   @db.VarChar(100)
+  value        Json
+  description  String?  @db.VarChar(255)
+  updated_by   String?  @db.Uuid
+  updated_at   DateTime @default(now())
+  governorate  Governorate? @relation(fields: [governorate_id], references: [id])
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  actor_user_id String? @db.Uuid
+  action      String   @db.VarChar(50)
+  entity_type String   @db.VarChar(50)
+  entity_id   String?  @db.Uuid
+  before_state Json?
+  after_state Json?
+  ip_address  String?  @db.Inet
+  created_at  DateTime @default(now())
+  actor_user  User?    @relation("actor_user", fields: [actor_user_id], references: [id])
+}

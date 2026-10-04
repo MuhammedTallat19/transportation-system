@@ -1,0 +1,25 @@
+{
+  "routeId": "33333333-3333-3333-3333-333333333301",
+  "routeName": "Central - Industrial Line",
+  "fareRuleId": "44444444-4444-4444-4444-444444444401",
+  "fareType": "DISTANCE_BASED",
+  "breakdown": {
+    "baseFareCents": 500,
+    "distanceComponentCents": 1410,
+    "stationComponentCents": 0,
+    "surchargeCents": 0
+  },
+  "totalCents": 1910,
+  "currency": "EGP",
+  "distanceKm": 9.4,
+  "estimatedDurationSec": 1200,
+  "nearbyVehicles": [
+    {
+      "vehicleId": "55555555-5555-5555-5555-555555555501",
+      "plateNumber": "ISM-1234",
+      "latitude": 30.5965,
+      "longitude": 32.2715,
+      "etaToStartStationSec": 240
+    }
+  ]
+}

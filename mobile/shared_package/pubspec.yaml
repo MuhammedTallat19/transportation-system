@@ -1,0 +1,13 @@
+name: shared_package
+description: Shared design system and widgets for Transportation App.
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+flutter:
+  uses-material-design: true

@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "FARE_RULE_NOT_FOUND",
+    "message": "No active fare rule exists for this route.",
+    "details": {}
+  }
+}

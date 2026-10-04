@@ -1,0 +1,24 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+/tools/flutter/flutter/
+/tools/flutter/flutter_sdk.zip
+/tools/flutter/flutter_sdk_download.zip
+
+# Env and OS
+.env
+.DS_Store
